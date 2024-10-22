@@ -1,0 +1,12 @@
+[package]
+name = "scholarly_identifiers"
+authors = ["Joe Wass <joe@afandian.com>"]
+description = "Library of identifier types for scholarly metadata."
+readme = "README.md"
+repository = "https://github.com/pardalotus/scholarly_identifiers"
+license = "MIT"
+keywords = ["identifiers", "metadata", "doi"]
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
