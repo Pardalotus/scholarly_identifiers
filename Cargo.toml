@@ -10,3 +10,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+http = "1.0"
+lazy_static = "1.5.0"
+log = "0.4.22"
+percent-encoding = "2.3.1"
+regex = "1.11.0"
