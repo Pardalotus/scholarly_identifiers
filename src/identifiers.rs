@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{doi, uri};
+use crate::{doi, orcid, uri};
 use http::Uri;
 
 /// A Scholarly Identifier.
@@ -10,6 +10,9 @@ pub enum Identifier {
     // A DOI, split into prefix (e.g. "10.5555") and suffix (eg. "12345678").
     // This representation is the native Unicode representation, i.e. is not URL-encoded.
     Doi { prefix: String, suffix: String },
+
+    Orcid { value: String },
+
     // A valid URI, but only used when other types aren't recognised.
     Uri { value: String },
 
@@ -24,6 +27,7 @@ type IdentifierParser = fn(input: &IdentifierParseInput) -> Option<Identifier>;
 const PARSERS: &'static [IdentifierParser] = &[
     // DOIs are a subset of Handle, so must be attempted before Handles.
     doi::try_parse,
+    orcid::try_parse,
     // URIs are greedy, so place last in the list.
     uri::try_parse,
 ];
@@ -55,6 +59,8 @@ impl Identifier {
                 suffix: _,
             } => doi::to_uri(&self),
 
+            Identifier::Orcid { value: _ } => orcid::to_uri(&self),
+
             Identifier::Uri { ref value } => Some(value.clone()),
 
             // Don't assume the String type can be converted to a URI.
@@ -83,5 +89,39 @@ impl IdentifierParseInput {
             raw: String::from(input),
             uri: valid_uri,
         }
+    }
+
+    /// Return the path with the leading slash removed.
+    /// There may not be a leading slash.
+    pub(crate) fn path_no_slash(&self) -> Option<String> {
+        match self.uri {
+            Some(ref uri) => {
+                let path = uri.path();
+                Some(String::from(if path.starts_with("/") {
+                    &path[1..]
+                } else {
+                    path
+                }))
+            }
+            _ => None,
+        }
+    }
+
+    pub(crate) fn path_no_slash_uppercase(&self) -> Option<String> {
+        match self.path_no_slash() {
+            Some(path) => Some(path.to_uppercase()),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn host(&self) -> Option<&str> {
+        match &self.uri {
+            Some(uri) => uri.host(),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn host_lowercase(&self) -> Option<String> {
+        self.host().map(|x| x.to_lowercase())
     }
 }

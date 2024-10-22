@@ -1,3 +1,6 @@
+//! DOI
+//! https://doi.org
+//!
 //! DOIs are persistent identifiers used in scholarly metadata.
 //! The DOI system is a subset of Handle. Every DOI is a Handle.
 //!
@@ -190,7 +193,7 @@ pub fn to_uri(input: &Identifier) -> Option<String> {
 
 /// Tests specifically for the parser.
 #[cfg(test)]
-mod parse_tests {
+mod doi_parser_tests {
     use super::*;
 
     #[test]
@@ -410,7 +413,7 @@ mod parse_tests {
 }
 
 #[cfg(test)]
-mod negative_parse_tests {
+mod doi_parser_negative_tests {
     use super::*;
 
     /// Some URLs on the doi.org domain aren't DOIs.
@@ -490,7 +493,7 @@ mod negative_parse_tests {
 
 /// Tests for the end-to-end behaviour of the parser and then conversion back to URI.
 #[cfg(test)]
-mod end_to_end_tests {
+mod doi_end_to_end_tests {
     use super::*;
 
     #[test]
