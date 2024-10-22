@@ -24,7 +24,7 @@ pub enum Identifier {
 type IdentifierParser = fn(input: &IdentifierParseInput) -> Option<Identifier>;
 
 // List of parsers, in order of prededence.
-const PARSERS: &'static [IdentifierParser] = &[
+const PARSERS: &[IdentifierParser] = &[
     // DOIs are a subset of Handle, so must be attempted before Handles.
     doi::try_parse,
     orcid::try_parse,
@@ -57,9 +57,9 @@ impl Identifier {
             Identifier::Doi {
                 prefix: _,
                 suffix: _,
-            } => doi::to_uri(&self),
+            } => doi::to_uri(self),
 
-            Identifier::Orcid { value: _ } => orcid::to_uri(&self),
+            Identifier::Orcid { value: _ } => orcid::to_uri(self),
 
             Identifier::Uri { ref value } => Some(value.clone()),
 
@@ -108,10 +108,7 @@ impl IdentifierParseInput {
     }
 
     pub(crate) fn path_no_slash_uppercase(&self) -> Option<String> {
-        match self.path_no_slash() {
-            Some(path) => Some(path.to_uppercase()),
-            _ => None,
-        }
+        self.path_no_slash().map(|path| path.to_uppercase())
     }
 
     pub(crate) fn host(&self) -> Option<&str> {

@@ -28,7 +28,6 @@ use std::fmt::Write;
 
 use crate::identifiers::{Identifier, IdentifierParseInput};
 use lazy_static::lazy_static;
-use log;
 use regex::Regex;
 
 lazy_static! {
@@ -54,7 +53,7 @@ lazy_static! {
     static ref RESERVED_CHARACTERS : HashSet<char> = HashSet::from_iter("!$&'()*,/:;=@".chars());
 
     /// These characters should not be encoded in a DOI. All others must be.
-    static ref DO_NOT_ENCODE : HashSet<char> = HashSet::from_iter(UNRESERVED_CHARACTERS.union(&RESERVED_CHARACTERS).map(|a| *a ));
+    static ref DO_NOT_ENCODE : HashSet<char> = HashSet::from_iter(UNRESERVED_CHARACTERS.union(&RESERVED_CHARACTERS).copied());
 }
 
 /// Percent-encode characters according to the specific rules for DOI encoding.
@@ -76,15 +75,12 @@ fn percent_encode_for_doi(input: &str) -> String {
                 // The buffer is the correct size for any Unicode character. If
                 // there's a failure to write, then this should be a noisy
                 // error.
-                match write!(&mut result_buffer, "%{:02X}", b) {
-                    Err(error) => log::error!("Can't write {:?}, error {}", c, error),
-                    _ => {}
-                };
+                write!(&mut result_buffer, "%{:02X}", b).unwrap();
             }
         }
     }
 
-    return result_buffer;
+    result_buffer
 }
 
 // Construct an Identifier containing Unicode-native string.
@@ -98,7 +94,7 @@ fn construct(decoded_raw_doi: &String) -> Option<Identifier> {
 
         Some(Identifier::Doi {
             prefix: String::from(prefix),
-            suffix: String::from(lowercase_suffix),
+            suffix: lowercase_suffix,
         })
     } else {
         None
@@ -184,7 +180,7 @@ pub fn to_uri(input: &Identifier) -> Option<String> {
             ref prefix,
             ref suffix,
         } => {
-            let encoded_suffix = percent_encode_for_doi(&suffix);
+            let encoded_suffix = percent_encode_for_doi(suffix);
             Some(format!("https://doi.org/{}/{}", prefix, encoded_suffix))
         }
         _ => None,
@@ -203,7 +199,7 @@ mod doi_parser_tests {
                 prefix: String::from("10.5555"),
                 suffix: String::from("12345678")
             },
-            Identifier::parse(&"10.5555/12345678")
+            Identifier::parse("10.5555/12345678")
         );
     }
 
@@ -214,7 +210,7 @@ mod doi_parser_tests {
                 prefix: String::from("10.5555"),
                 suffix: String::from("12345678")
             },
-            Identifier::parse(&"doi:10.5555/12345678"),
+            Identifier::parse("doi:10.5555/12345678"),
             "Siple DOIs should parse."
         );
     }
@@ -229,28 +225,28 @@ mod doi_parser_tests {
         // Standard resolver.
         assert_eq!(
             expected,
-            Identifier::parse(&"https://doi.org/10.5555/12345678"),
+            Identifier::parse("https://doi.org/10.5555/12345678"),
             "URLs on the DOI resolver using HTTPS should parse."
         );
 
         // Standard resolver.
         assert_eq!(
             expected,
-            Identifier::parse(&"http://doi.org/10.5555/12345678"),
+            Identifier::parse("http://doi.org/10.5555/12345678"),
             "URLs on the DOI resolver using HTTP should parse."
         );
 
         // Old resolver http
         assert_eq!(
             expected,
-            Identifier::parse(&"https://dx.doi.org/10.5555/12345678"),
+            Identifier::parse("https://dx.doi.org/10.5555/12345678"),
             "Old resolver using HTTP should be recognised."
         );
 
         // Old resolver https
         assert_eq!(
             expected,
-            Identifier::parse(&"http://dx.doi.org/10.5555/12345678"),
+            Identifier::parse("http://dx.doi.org/10.5555/12345678"),
             "Old resolver using HTTPS should be recognised."
         );
     }
@@ -262,9 +258,9 @@ mod doi_parser_tests {
             suffix: String::from("12345678"),
         };
 
-        assert_eq!(expected, Identifier::parse(&"doi:10.5555/12345678"));
-        assert_eq!(expected, Identifier::parse(&"info:doi:10.5555/12345678"));
-        assert_eq!(expected, Identifier::parse(&"urn:doi:10.5555/12345678"));
+        assert_eq!(expected, Identifier::parse("doi:10.5555/12345678"));
+        assert_eq!(expected, Identifier::parse("info:doi:10.5555/12345678"));
+        assert_eq!(expected, Identifier::parse("urn:doi:10.5555/12345678"));
     }
 
     #[test]
@@ -274,15 +270,15 @@ mod doi_parser_tests {
             suffix: String::from("abcdefg"),
         };
 
-        assert_eq!(expected, Identifier::parse(&"10.5555/abcdefg"));
+        assert_eq!(expected, Identifier::parse("10.5555/abcdefg"));
         assert_eq!(
             expected,
-            Identifier::parse(&"https://doi.org/10.5555/abcdefg")
+            Identifier::parse("https://doi.org/10.5555/abcdefg")
         );
-        assert_eq!(expected, Identifier::parse(&"10.5555/ABCDEFG"));
+        assert_eq!(expected, Identifier::parse("10.5555/ABCDEFG"));
         assert_eq!(
             expected,
-            Identifier::parse(&"https://doi.org/10.5555/ABCDEFG")
+            Identifier::parse("https://doi.org/10.5555/ABCDEFG")
         );
     }
 
@@ -297,19 +293,19 @@ mod doi_parser_tests {
 
         assert_eq!(
             expected,
-            Identifier::parse(&"10.1002/(SICI)1099-050X(199823/24)37:3/4<197::AID-HRM2>3.0.CO;2-#",),
+            Identifier::parse("10.1002/(SICI)1099-050X(199823/24)37:3/4<197::AID-HRM2>3.0.CO;2-#",),
             "SICI as a plain DOI should parse. Contains a terminal '#' character."
         );
 
         assert_eq!(
             expected,
-            Identifier::parse(&"https://doi.org/10.1002%2F%28sici%291099-050x%28199823%2F24%2937%3A3%2F4%3C197%3A%3Aaid-hrm2%3E3.0.co%3B2-%23"),
+            Identifier::parse("https://doi.org/10.1002%2F%28sici%291099-050x%28199823%2F24%2937%3A3%2F4%3C197%3A%3Aaid-hrm2%3E3.0.co%3B2-%23"),
             "SICI as URL, with every possible character encoded, should parse."
         );
 
         assert_eq!(
             expected,
-            Identifier::parse(&"https://doi.org/10.1002/(sici)1099-050x(199823/24)37:3/4%3C197::aid-hrm2%3E3.0.co;2-%23"),
+            Identifier::parse("https://doi.org/10.1002/(sici)1099-050x(199823/24)37:3/4%3C197::aid-hrm2%3E3.0.co;2-%23"),
             "SICI as URL, with only characters recommended by DOI handbook, should parse."
         )
     }
@@ -333,23 +329,14 @@ mod doi_parser_tests {
                 // It's a little clearer to use a raw string than escape the quote.
                 suffix: String::from(r##"%"# ?"##),
             },
-            Identifier::parse(&"https://doi.org/10.5555/%25%22%23%20%3F"),
+            Identifier::parse("https://doi.org/10.5555/%25%22%23%20%3F"),
             "Handle mandatory DOI URL encodings."
         );
     }
 
     ///  DOI handbook specify recommended encoding of
-    /// < %3C
-    ///  > %3E
-    ///  { %7B
-    ///  } %7D
-    ///  ^ %5E
-    ///  [ %5B
-    ///  ] %5D
-    ///  ` %60
-    ///  | %7C
-    ///  \ %5C
-    ///  + %2B
+    /// < %3C, > %3E, { %7B, } %7D, ^ %5E, [ %5B, ] %5D
+    /// ` %60, | %7C, \ %5C, + %2B
     #[test]
     fn recommended_encodings() {
         let expected = Identifier::Doi {
@@ -359,27 +346,27 @@ mod doi_parser_tests {
 
         assert_eq!(
             expected,
-            Identifier::parse(&"https://doi.org/10.5555/%3C%3E%7B%7D%5E%5B%5D%60%7C%5C%2B"),
+            Identifier::parse("https://doi.org/10.5555/%3C%3E%7B%7D%5E%5B%5D%60%7C%5C%2B"),
             "Should parse fully encoded URL."
         );
 
         assert_eq!(
             expected,
-            Identifier::parse(&r##"10.5555/<>{}^[]`|\+"##),
+            Identifier::parse(r##"10.5555/<>{}^[]`|\+"##),
             "Should parse unencoded plain DOI containing recommended encoded characters."
         );
 
         // The "+" is encoded.
         assert_eq!(
             expected,
-            Identifier::parse(&r##"https://doi.org/10.5555/<>{}^[]`|\%2B"##),
+            Identifier::parse(r##"https://doi.org/10.5555/<>{}^[]`|\%2B"##),
             "Should parse encoded URL with some encoded, some not."
         );
 
         // Alternating encoded, unencoded.
         assert_eq!(
             expected,
-            Identifier::parse(&r##"https://doi.org/10.5555/<%3E{%7D^[%5D`%7C\%2B"##,),
+            Identifier::parse(r##"https://doi.org/10.5555/<%3E{%7D^[%5D`%7C\%2B"##,),
             "Should parse encoded URL with some encoded, some not"
         );
     }
@@ -400,7 +387,7 @@ mod doi_parser_tests {
         ];
 
         for example in examples {
-            let parsed = Identifier::parse(&example);
+            let parsed = Identifier::parse(example);
             match parsed {
                 Identifier::Doi {
                     prefix: _,
@@ -424,7 +411,7 @@ mod doi_parser_negative_tests {
             Identifier::Uri {
                 value: String::from(url1)
             },
-            Identifier::parse(&url1),
+            Identifier::parse(url1),
             "URL on doi.org should not be parsed as DOI if it doesn't have the syntax."
         );
 
@@ -433,7 +420,7 @@ mod doi_parser_negative_tests {
             Identifier::Uri {
                 value: String::from(url2)
             },
-            Identifier::parse(&url2),
+            Identifier::parse(url2),
             "https://www.doi.org/images/logos/header_logo_cropped.svg"
         )
     }
@@ -446,7 +433,7 @@ mod doi_parser_negative_tests {
             Identifier::Uri {
                 value: String::from(plos)
             },
-            Identifier::parse(&plos),
+            Identifier::parse(plos),
             "Landing page is not a DOI."
         );
 
@@ -455,7 +442,7 @@ mod doi_parser_negative_tests {
             Identifier::Uri {
                 value: String::from(wiley)
             },
-            Identifier::parse(&wiley),
+            Identifier::parse(wiley),
             "Landing page is not a DOI."
         );
     }
@@ -479,13 +466,13 @@ mod doi_parser_negative_tests {
         ];
 
         for example in examples {
-            let parsed = Identifier::parse(&example);
-            match parsed {
-                Identifier::Doi {
-                    prefix: _,
-                    suffix: _,
-                } => assert!(false, "Should not parse {} as a DOI", &example),
-                _ => {}
+            let parsed = Identifier::parse(example);
+            if let Identifier::Doi {
+                prefix: _,
+                suffix: _,
+            } = parsed
+            {
+                assert!(false, "Should not parse {} as a DOI", &example)
             }
         }
     }
@@ -500,7 +487,7 @@ mod doi_end_to_end_tests {
     fn parse_simple() {
         assert_eq!(
             "https://doi.org/10.5555/12345678",
-            Identifier::parse(&"10.5555/12345678").to_uri().unwrap()
+            Identifier::parse("10.5555/12345678").to_uri().unwrap()
         );
     }
 
@@ -511,6 +498,6 @@ mod doi_end_to_end_tests {
         // Correctly encoded URL.
         let correct = "https://doi.org/10.5555/%3C%3E%7B%7D%5E%5B%5D%60%7C%5C%2B";
 
-        assert_eq!(correct, Identifier::parse(&correct).to_uri().unwrap());
+        assert_eq!(correct, Identifier::parse(correct).to_uri().unwrap());
     }
 }

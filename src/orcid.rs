@@ -19,11 +19,8 @@ lazy_static! {
 /// Parse an input string as an ORCID id.
 pub(crate) fn try_parse(input: &IdentifierParseInput) -> Option<Identifier> {
     if let Some(path) = input.path_no_slash_uppercase() {
-        println!("HOST {:?}", input.host());
         match input.host_lowercase() {
             Some(x) if x.eq(HOST) => {
-                println!("2 ");
-
                 if validate_check_digit(&path) {
                     Some(Identifier::Orcid { value: path })
                 } else {
@@ -63,13 +60,8 @@ fn generate_check_digit(base_digits: &str) -> Option<String> {
 
 fn validate_check_digit(orcid_id: &str) -> bool {
     // Check the right length and syntax, also extract numbers and check digit.
-    //
-    println!("VALIDATE {:?}", orcid_id);
-
     match ORCID_RE.captures(orcid_id) {
         Some(groups) => {
-            println!("SOME GROUPS {:?}", groups);
-
             // Ensure that all 4 groups, plus implicit group 0, were found.
             // Guards the unwraps.
             if groups.len() < 5 {
@@ -116,7 +108,7 @@ mod orcid_parser_tests {
             Identifier::Orcid {
                 value: String::from("0000-0002-1028-6941")
             },
-            Identifier::parse(&"https://orcid.org/0000-0002-1028-6941")
+            Identifier::parse("https://orcid.org/0000-0002-1028-6941")
         );
     }
 
@@ -126,14 +118,14 @@ mod orcid_parser_tests {
             Identifier::Orcid {
                 value: String::from("0000-0002-1694-233X")
             },
-            Identifier::parse(&"https://orcid.org/0000-0002-1694-233X")
+            Identifier::parse("https://orcid.org/0000-0002-1694-233X")
         );
 
         assert_eq!(
             Identifier::Orcid {
                 value: String::from("0000-0001-5109-3700")
             },
-            Identifier::parse(&"https://orcid.org/0000-0001-5109-3700")
+            Identifier::parse("https://orcid.org/0000-0001-5109-3700")
         );
     }
 
@@ -144,7 +136,7 @@ mod orcid_parser_tests {
             Identifier::Uri {
                 value: String::from("https://orcid.org/0000-0002-1694-2330")
             },
-            Identifier::parse(&"https://orcid.org/0000-0002-1694-2330"),
+            Identifier::parse("https://orcid.org/0000-0002-1694-2330"),
             "Bad checksum should parse as a URI not an ORCID ID."
         );
 
@@ -152,7 +144,7 @@ mod orcid_parser_tests {
             Identifier::Uri {
                 value: String::from("https://orcid.org/0000-0001-5109-370X")
             },
-            Identifier::parse(&"https://orcid.org/0000-0001-5109-370X"),
+            Identifier::parse("https://orcid.org/0000-0001-5109-370X"),
             "Bad checksum should parse as a URI not an ORCID ID."
         );
     }
@@ -165,13 +157,13 @@ mod orcid_parser_tests {
 
         assert_eq!(
             expected,
-            Identifier::parse(&"https://orcid.org/0000-0002-1694-233x"),
+            Identifier::parse("https://orcid.org/0000-0002-1694-233x"),
             "Lower case ORCID URI should parse."
         );
 
         assert_eq!(
             expected,
-            Identifier::parse(&"HTTPS://ORCID.ORG/0000-0002-1694-233X"),
+            Identifier::parse("HTTPS://ORCID.ORG/0000-0002-1694-233X"),
             "Upper case ORCID URI should parse."
         );
     }
@@ -184,13 +176,13 @@ mod orcid_parser_tests {
 
         assert_eq!(
             expected,
-            Identifier::parse(&"https://orcid.org/0000-0002-1694-233x"),
+            Identifier::parse("https://orcid.org/0000-0002-1694-233x"),
             "HTTPS ORCID URI should parse."
         );
 
         assert_eq!(
             expected,
-            Identifier::parse(&"http://orcid.org/0000-0002-1694-233x"),
+            Identifier::parse("http://orcid.org/0000-0002-1694-233x"),
             "HTTP ORCID URI should parse."
         );
     }
@@ -205,7 +197,7 @@ mod orcid_end_to_end_tests {
     fn parse_simple() {
         assert_eq!(
             "https://orcid.org/0000-0002-1694-233X",
-            Identifier::parse(&"https://orcid.org/0000-0002-1694-233X")
+            Identifier::parse("https://orcid.org/0000-0002-1694-233X")
                 .to_uri()
                 .unwrap()
         );
