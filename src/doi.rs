@@ -134,14 +134,10 @@ pub(crate) fn try_parse(input: &IdentifierParseInput) -> Option<Identifier> {
     if DOI_STRICT_RE.is_match(&lowercase) {
         construct(&lowercase)
     } else {
-        println!("1");
         // Otherwise treat this as a URI DOI, and attempt to parse.
         let less_prefixes = remove_doi_prefixes(&lowercase);
-        println!("LP {:?}", less_prefixes);
 
         if DOI_RE.is_match(&less_prefixes) {
-            println!("is match");
-
             // Use [`percent_encoding::percent_decode`] rather than
             // [`percent_encoding::decode_utf8_lossy`] so this function fails when it encounters
             // invalid UTF-8 sequences.
