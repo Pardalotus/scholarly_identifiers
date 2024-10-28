@@ -7,19 +7,47 @@ use http::Uri;
 /// Each type of scholarly identifier has a different purpose, different semantics for construction, different validation and comparison.
 #[derive(Debug, PartialEq)]
 pub enum Identifier {
-    // A DOI, split into prefix (e.g. "10.5555") and suffix (eg. "12345678").
-    // This representation is the native Unicode representation, i.e. is not URL-encoded.
+    /// DOI, Digital Object Identifier
+    ///
+    /// A DOI, split into prefix (e.g. "10.5555") and suffix (eg. "12345678").
+    /// This representation is the native Unicode representation, i.e. is not URL-encoded.
+    ///
+    /// DOIs are persistent identifiers used in scholarly metadata.
+    /// The DOI system is a subset of Handle. Every DOI is a Handle.
+    ///
+    /// A DOI can contain any printable Unicode character. A 'raw' DOI string starts
+    /// with "10.", followed by a string of numbers, then "/", then a string of any
+    /// printable Unicode characters. A DOI can also be encoded as URLs (which makes
+    /// it a resolvable identifier). When it's represented as a URL, it must be
+    /// carefully encoded.
+    ///
+    /// A 'raw' DOI string can be compared for equality against another 'raw' DOI string.
+    ///
+    /// DOIs are commonly turned into URLs by prepending the link resolver
+    /// "`https://doi.org/`", although other link resolvers such as
+    /// "`https://hdl.handle.net/`" or "`https://dx.doi.org/`" work and have been used
+    /// in the past.
+    ///
+    /// DOI Handbook's [Encode a DOI according per "DOI Name Encoding Rules for URL Presentation" in the DOI handbook](https://www.doi.org/doi-handbook/HTML/encoding-rules-for-urls.html)
+    /// sets out how DOIs should be encoded. This library follows those rules.
+    ///
+    /// However, there are many ways to encode a URL. This means that a URL representation of a DOI cannot be reliably compared for equality.
+    ///
     Doi { prefix: String, suffix: String },
 
+    /// ORCID, Open Researcher and Contributor ID
+    /// An ORCID iD, expressed as a raw identifier without the link resolver.
     Orcid { value: String },
 
-    // A valid URI, but only used when other types aren't recognised.
+    /// A valid URI, but only used when other types aren't recognised.
     Uri(String),
 
-    // An identifier that doesn't match any known type. The fall-through case.
+    /// An identifier that doesn't match any known type. The fall-through case.
     String { value: String },
 
-    // A 13-digit ISBN, without hyphens or spaces.
+    /// ISBN, International Standard Book Identifier
+    /// Always expressed in the 13-digit form, including check-digit.
+    /// Hyphens and spaces are removed.
     Isbn(String),
 }
 
