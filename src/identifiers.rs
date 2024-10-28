@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{doi, orcid, uri};
+use crate::{doi, isbn, orcid, uri};
 use http::Uri;
 
 /// A Scholarly Identifier.
@@ -14,10 +14,13 @@ pub enum Identifier {
     Orcid { value: String },
 
     // A valid URI, but only used when other types aren't recognised.
-    Uri { value: String },
+    Uri(String),
 
     // An identifier that doesn't match any known type. The fall-through case.
     String { value: String },
+
+    // A 13-digit ISBN, without hyphens or spaces.
+    Isbn(String),
 }
 
 /// Signature of a function that attempts to parse to an Identifier.
@@ -28,6 +31,7 @@ const PARSERS: &[IdentifierParser] = &[
     // DOIs are a subset of Handle, so must be attempted before Handles.
     doi::try_parse,
     orcid::try_parse,
+    isbn::try_parse,
     // URIs are greedy, so place last in the list.
     uri::try_parse,
 ];
@@ -61,11 +65,14 @@ impl Identifier {
 
             Identifier::Orcid { value: _ } => orcid::to_uri(self),
 
-            Identifier::Uri { ref value } => Some(value.clone()),
+            Identifier::Uri(value) => Some(value.clone()),
 
             // Don't assume the String type can be converted to a URI.
             // If it had been parseable as a URI, it would have been parsed as the Identifier::Uri type.
             Identifier::String { value: _ } => None,
+
+            // No natural URI for ISBN.
+            Identifier::Isbn(_) => None,
         }
     }
 }

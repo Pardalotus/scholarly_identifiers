@@ -133,17 +133,13 @@ mod orcid_parser_tests {
     #[test]
     fn bad_checksums() {
         assert_eq!(
-            Identifier::Uri {
-                value: String::from("https://orcid.org/0000-0002-1694-2330")
-            },
+            Identifier::Uri(String::from("https://orcid.org/0000-0002-1694-2330")),
             Identifier::parse("https://orcid.org/0000-0002-1694-2330"),
             "Bad checksum should parse as a URI not an ORCID ID."
         );
 
         assert_eq!(
-            Identifier::Uri {
-                value: String::from("https://orcid.org/0000-0001-5109-370X")
-            },
+            Identifier::Uri(String::from("https://orcid.org/0000-0001-5109-370X")),
             Identifier::parse("https://orcid.org/0000-0001-5109-370X"),
             "Bad checksum should parse as a URI not an ORCID ID."
         );
