@@ -404,18 +404,14 @@ mod doi_parser_negative_tests {
     fn non_dois() {
         let url1 = "https://www.doi.org/the-identifier/what-is-a-doi/";
         assert_eq!(
-            Identifier::Uri {
-                value: String::from(url1)
-            },
+            Identifier::Uri(String::from(url1)),
             Identifier::parse(url1),
             "URL on doi.org should not be parsed as DOI if it doesn't have the syntax."
         );
 
         let url2 = "https://www.doi.org/the-identifier/what-is-a-doi/";
         assert_eq!(
-            Identifier::Uri {
-                value: String::from(url2)
-            },
+            Identifier::Uri(String::from(url2)),
             Identifier::parse(url2),
             "https://www.doi.org/images/logos/header_logo_cropped.svg"
         )
@@ -426,18 +422,14 @@ mod doi_parser_negative_tests {
     fn landing_page() {
         let plos = "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0190046";
         assert_eq!(
-            Identifier::Uri {
-                value: String::from(plos)
-            },
+            Identifier::Uri(String::from(plos)),
             Identifier::parse(plos),
             "Landing page is not a DOI."
         );
 
         let wiley = "https://onlinelibrary.wiley.com/doi/10.1111/j.1751-0813.2010.00564.x";
         assert_eq!(
-            Identifier::Uri {
-                value: String::from(wiley)
-            },
+            Identifier::Uri(String::from(wiley)),
             Identifier::parse(wiley),
             "Landing page is not a DOI."
         );

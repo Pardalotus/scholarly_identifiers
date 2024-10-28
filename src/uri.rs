@@ -7,9 +7,10 @@ use crate::identifiers::{Identifier, IdentifierParseInput};
 
 pub(crate) fn try_parse(input: &IdentifierParseInput) -> Option<Identifier> {
     // Rely on the pre-compused URI.
-    input.uri.as_ref().map(|uri| Identifier::Uri {
-            value: uri.to_string(),
-        })
+    input
+        .uri
+        .as_ref()
+        .map(|uri| Identifier::Uri(uri.to_string()))
 }
 
 #[cfg(test)]
@@ -19,9 +20,7 @@ mod parse_tests {
     #[test]
     fn parse_simple() {
         assert_eq!(
-            Identifier::Uri {
-                value: String::from("http://example.com/"),
-            },
+            Identifier::Uri(String::from("http://example.com/"),),
             Identifier::parse("http://example.com/")
         );
     }
@@ -30,9 +29,7 @@ mod parse_tests {
     #[test]
     fn parse_unconventional() {
         assert_eq!(
-            Identifier::Uri {
-                value: String::from("an-unconventional-uri"),
-            },
+            Identifier::Uri(String::from("an-unconventional-uri"),),
             Identifier::parse("an-unconventional-uri")
         );
     }
