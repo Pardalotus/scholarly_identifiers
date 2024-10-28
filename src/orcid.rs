@@ -1,5 +1,5 @@
 //! ORCID
-//! https://orcid.org
+//! See <https://orcid.org>
 //!
 //! Contributor ID, used to identifier authors.
 
@@ -81,10 +81,7 @@ fn validate_check_digit(orcid_id: &str) -> bool {
 
                 let check = groups.get(5).unwrap().as_str();
 
-                match expected_check {
-                    Some(ref value) if value == check => true,
-                    _ => false,
-                }
+                matches!(expected_check, Some(ref value) if value == check)
             }
         }
         _ => false,

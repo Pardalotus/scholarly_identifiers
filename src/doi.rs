@@ -1,27 +1,4 @@
 //! DOI
-//! https://doi.org
-//!
-//! DOIs are persistent identifiers used in scholarly metadata.
-//! The DOI system is a subset of Handle. Every DOI is a Handle.
-//!
-//! A DOI can contain any printable Unicode character. A 'raw' DOI string starts
-//! with "10.", followed by a string of numbers, then "/", then a string of any
-//! printable Unicode characters. A DOI can also be encoded as URLs (which makes
-//! it a resolvable identifier). When it's represented as a URL, it must be
-//! carefully encoded.
-//!
-//! A 'raw' DOI string can be compared for equality against another 'raw' DOI string.
-//!
-//! DOIs are commonly turned into URLs by prepending the link resolver
-//! "https://doi.org/", although other link resolvers such as
-//! "https://hdl.handle.net/" or "https://dx.doi.org/" work and have been used
-//! in the past.
-//!
-//! DOI Handbook's [Encode a DOI according per "DOI Name Encoding Rules for URL Presentation" in the DOI handbook](https://www.doi.org/doi-handbook/HTML/encoding-rules-for-urls.html)
-//! sets out how DOIs should be encoded. This library follows those rules.
-//!
-//! However, there are many ways to encode a URL. This means that a URL representation of a DOI cannot be reliably compared for equality.
-//!
 
 use std::collections::HashSet;
 use std::fmt::Write;
@@ -84,7 +61,7 @@ fn percent_encode_for_doi(input: &str) -> String {
 }
 
 // Construct an Identifier containing Unicode-native string.
-fn construct(decoded_raw_doi: &String) -> Option<Identifier> {
+fn construct(decoded_raw_doi: &str) -> Option<Identifier> {
     // If the input didn't start with "10." then the input was in the wrong format.
     if let Some(matched) = DOI_STRICT_RE.captures(decoded_raw_doi) {
         let prefix = matched.get(1).unwrap().as_str();
@@ -102,7 +79,7 @@ fn construct(decoded_raw_doi: &String) -> Option<Identifier> {
 }
 
 // Remove the string prefixes for DOIs. Not DOI prefixes. Urgh.
-fn remove_doi_prefixes(input: &String) -> String {
+fn remove_doi_prefixes(input: &str) -> String {
     // Remove leading scheme from start of string, if present.
     let no_scheme = URI_PREFIXES_SCHEME.replace(input, "").into_owned();
 
@@ -145,7 +122,7 @@ pub(crate) fn try_parse(input: &IdentifierParseInput) -> Option<Identifier> {
             // It's better to report invavlid DOIs than try to rescue them and end up
             // with an unintended string.
             match percent_encoding::percent_decode(less_prefixes.as_bytes()).decode_utf8() {
-                Ok(decoded) => construct(&decoded.into_owned()),
+                Ok(decoded) => construct(&decoded),
                 Err(err) => {
                     log::error!(
                         "Failed to decode URI component: {}, error: {}",

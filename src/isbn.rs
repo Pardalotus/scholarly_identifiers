@@ -39,41 +39,30 @@ pub(crate) fn try_parse(input: &IdentifierParseInput) -> Option<Identifier> {
 fn str_to_digits(input: &str) -> Option<Vec<u32>> {
     let chars = Vec::from_iter(input.chars());
 
-    let bad = chars.iter().any(|x| match x {
-        '0'..='9' => false,
-        'X' | 'x' => false,
-        ' ' | '-' => false,
-        _ => true,
-    });
+    let bad = chars
+        .iter()
+        .any(|x| !matches!(x, '0'..='9' | 'X' | 'x' | ' ' | '-'));
 
     if bad {
         return None;
     }
 
     // Flatten unboxes Options and removes nulls.
-    let digits = chars
-        .iter()
-        .map(|x| match x {
-            '0'..='9' => x.to_digit(10),
-            'X' | 'x' => Some(10),
-            _ => None,
-        })
-        .flatten();
+    let digits = chars.iter().filter_map(|x| match x {
+        '0'..='9' => x.to_digit(10),
+        'X' | 'x' => Some(10),
+        _ => None,
+    });
 
     Some(Vec::from_iter(digits))
 }
 
 fn digits_to_str(input: &[u32]) -> String {
-    String::from_iter(
-        input
-            .iter()
-            .map(|x| match x {
-                0..=9 => char::from_digit(*x, 10),
-                10 => Some('X'),
-                _ => None,
-            })
-            .flatten(),
-    )
+    String::from_iter(input.iter().filter_map(|x| match x {
+        0..=9 => char::from_digit(*x, 10),
+        10 => Some('X'),
+        _ => None,
+    }))
 }
 
 /// Generate checksum for 10 digit ISBN.
@@ -116,7 +105,7 @@ fn validate_13_digit(digits: &[u32]) -> bool {
     if digits.len() != 13 {
         return false;
     }
-    let expected_checksum = generate_13_digit_checksum(&digits);
+    let expected_checksum = generate_13_digit_checksum(digits);
     expected_checksum == digits[12]
 }
 
@@ -139,7 +128,7 @@ mod isbn_parser_tests {
     /// Correct 10 digit ISBNs are converted to 13-digit ones, with correct check digit.
     #[test]
     fn simple_10() {
-        let examples = vec![("0306406152", "9780306406157")];
+        let examples = [("0306406152", "9780306406157")];
 
         for example in examples.iter() {
             let result = Identifier::parse(example.0);
@@ -150,7 +139,7 @@ mod isbn_parser_tests {
     /// Correct 13 digit ISBNs are kept as-is.
     #[test]
     fn simple_13() {
-        let examples = vec![
+        let examples = [
             "9780306406157",
             "9781566199094",
             "9780123456472",
@@ -166,7 +155,7 @@ mod isbn_parser_tests {
 
     #[test]
     fn hyphens_10() {
-        let examples = vec![
+        let examples = [
             "0306406152",
             "0-306406152",
             "03-06406152",
@@ -187,7 +176,7 @@ mod isbn_parser_tests {
 
     #[test]
     fn hyphens_13() {
-        let examples = vec![
+        let examples = [
             "9-780306406157",
             "97-80306406157",
             "978-0306406157",
@@ -209,7 +198,7 @@ mod isbn_parser_tests {
     /// Bad checksums are not recognised as 10 digit ISBNs.
     #[test]
     fn bad_10() {
-        let examples = vec!["0306406150"];
+        let examples = ["0306406150"];
 
         for example in examples.iter() {
             let result = Identifier::parse(example);
@@ -220,7 +209,7 @@ mod isbn_parser_tests {
     /// Bad checksums are not recognised for 13 digit ISBNs.
     #[test]
     fn bad_13() {
-        let examples = vec![
+        let examples = [
             "9780306406157",
             "9781566199094",
             "9780123456472",
