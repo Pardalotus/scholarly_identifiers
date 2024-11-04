@@ -13,6 +13,14 @@ The representation of identifiers is geared toward stability in representation a
  - Hyphens and spaces are removed from ISBNs so that they can be compared regardless of formatting
  - 10-digit ISBNs are normalised to 13-digit formats, to allow the the same ISBN expressed both way to be compared
 
+# Why use this library?
+
+If you're using scholarly metadata, you'll likely be using scholarly
+identifiers. Each identifier has its own rules for parsing, validation, and
+representation. More info on the [Pardalotus Blog](https://pardalotus.tech/posts).
+
+This library will help with that.
+
 # Try it out
 
 See the examples:
@@ -25,4 +33,4 @@ cargo run --example main
 
 This code is MIT Licensed, Copyright 2024 Joe Wass.
 
-Inspired by work done at Crossref by Joe Wass, Dima Safonov, Panos Pandis.
+The code is inspired by work done at Crossref by Joe Wass, Dima Safonov, Panos Pandis.
