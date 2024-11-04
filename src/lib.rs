@@ -5,4 +5,5 @@ mod doi;
 pub mod identifiers;
 mod isbn;
 mod orcid;
+mod ror;
 mod uri;

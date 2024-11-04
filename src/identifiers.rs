@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{doi, isbn, orcid, uri};
+use crate::{doi, isbn, orcid, ror, uri};
 use http::Uri;
 
 /// A Scholarly Identifier.
@@ -39,6 +39,10 @@ pub enum Identifier {
     /// An ORCID iD, expressed as a raw identifier without the link resolver.
     Orcid(String),
 
+    /// ROR, Research Organisation Registry id.
+    /// A raw identifier, without the link resolver.
+    Ror(String),
+
     /// A valid URI, but only used when other types aren't recognised.
     Uri(String),
 
@@ -54,12 +58,13 @@ pub enum Identifier {
 /// Signature of a function that attempts to parse to an Identifier.
 type IdentifierParser = fn(input: &IdentifierParseInput) -> Option<Identifier>;
 
-// List of parsers, in order of prededence.
+// List of parsers, in order of precedence.
 const PARSERS: &[IdentifierParser] = &[
     // DOIs are a subset of Handle, so must be attempted before Handles.
     doi::try_parse,
     orcid::try_parse,
     isbn::try_parse,
+    ror::try_parse,
     // URIs are greedy, so place last in the list.
     uri::try_parse,
 ];
@@ -82,7 +87,11 @@ impl Identifier {
     }
 
     /// Convert to a URI format, if possible.
+    /// As not all identifiers have a URI representation, this might return None.
     pub fn to_uri(&self) -> Option<String> {
+        // The to_uri functions take the Identifier, not the unwrapped value.
+        // This allows them to guard that they are supplied the right type, which is important for a correct implementation.
+        // This in turn means those functions are safe to use directly if required.
         match self {
             Identifier::Doi {
                 prefix: _,
@@ -99,11 +108,13 @@ impl Identifier {
 
             // No natural URI for ISBN.
             Identifier::Isbn(_) => None,
+            Identifier::Ror(_) => ror::to_uri(self),
         }
     }
 }
 
 /// Intermediary representation of an input with pre-computed values needed by various parsers.
+#[derive(Debug)]
 pub(crate) struct IdentifierParseInput {
     pub raw: String,
 
