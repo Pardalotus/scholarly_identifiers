@@ -38,9 +38,7 @@ mod parse_tests {
     #[test]
     fn parse_invalid() {
         assert_eq!(
-            Identifier::String {
-                value: String::from("http://example.com/®"),
-            },
+            Identifier::String(String::from("http://example.com/®")),
             Identifier::parse("http://example.com/®")
         );
     }

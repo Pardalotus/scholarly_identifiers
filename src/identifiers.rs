@@ -37,13 +37,13 @@ pub enum Identifier {
 
     /// ORCID, Open Researcher and Contributor ID
     /// An ORCID iD, expressed as a raw identifier without the link resolver.
-    Orcid { value: String },
+    Orcid(String),
 
     /// A valid URI, but only used when other types aren't recognised.
     Uri(String),
 
     /// An identifier that doesn't match any known type. The fall-through case.
-    String { value: String },
+    String(String),
 
     /// ISBN, International Standard Book Identifier
     /// Always expressed in the 13-digit form, including check-digit.
@@ -78,9 +78,7 @@ impl Identifier {
         }
 
         // Fall-back case.
-        Identifier::String {
-            value: String::from(input),
-        }
+        Identifier::String(String::from(input))
     }
 
     /// Convert to a URI format, if possible.
@@ -91,13 +89,13 @@ impl Identifier {
                 suffix: _,
             } => doi::to_uri(self),
 
-            Identifier::Orcid { value: _ } => orcid::to_uri(self),
+            Identifier::Orcid(_) => orcid::to_uri(self),
 
             Identifier::Uri(value) => Some(value.clone()),
 
             // Don't assume the String type can be converted to a URI.
             // If it had been parseable as a URI, it would have been parsed as the Identifier::Uri type.
-            Identifier::String { value: _ } => None,
+            Identifier::String(_) => None,
 
             // No natural URI for ISBN.
             Identifier::Isbn(_) => None,
@@ -132,8 +130,9 @@ impl IdentifierParseInput {
         match self.uri {
             Some(ref uri) => {
                 let path = uri.path();
-                Some(String::from(if path.starts_with("/") {
-                    &path[1..]
+
+                Some(String::from(if let Some(rest) = path.strip_prefix("/") {
+                    rest
                 } else {
                     path
                 }))
