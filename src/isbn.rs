@@ -13,7 +13,7 @@ use crate::identifiers::{Identifier, IdentifierParseInput};
 /// Weights of the numbers 0 to 9 for 10-digit validation.
 const TEN_DIGIT_WEIGHTS: &[u32] = &[10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 
-/// Weights of hte numbers 0 to 12 for 13-digit validation.
+/// Weights of the numbers 0 to 12 for 13-digit validation.
 const THIRTEEN_DIGIT_WEIGHTS: &[u32] = &[1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1];
 
 /// Try to parse a 10 or 13 digit ISBN. Return the digits normalized to 13

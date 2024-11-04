@@ -22,7 +22,7 @@ pub(crate) fn try_parse(input: &IdentifierParseInput) -> Option<Identifier> {
         match input.host_lowercase() {
             Some(x) if x.eq(HOST) => {
                 if validate_check_digit(&path) {
-                    Some(Identifier::Orcid { value: path })
+                    Some(Identifier::Orcid(path))
                 } else {
                     None
                 }
@@ -90,7 +90,7 @@ fn validate_check_digit(orcid_id: &str) -> bool {
 
 pub fn to_uri(input: &Identifier) -> Option<String> {
     match input {
-        Identifier::Orcid { value } => Some(format!("https://orcid.org/{}", value)),
+        Identifier::Orcid(value) => Some(format!("https://orcid.org/{}", value)),
         _ => None,
     }
 }
@@ -102,9 +102,7 @@ mod orcid_parser_tests {
     #[test]
     fn simple_orcid() {
         assert_eq!(
-            Identifier::Orcid {
-                value: String::from("0000-0002-1028-6941")
-            },
+            Identifier::Orcid(String::from("0000-0002-1028-6941")),
             Identifier::parse("https://orcid.org/0000-0002-1028-6941")
         );
     }
@@ -112,16 +110,12 @@ mod orcid_parser_tests {
     #[test]
     fn good_checksums() {
         assert_eq!(
-            Identifier::Orcid {
-                value: String::from("0000-0002-1694-233X")
-            },
+            Identifier::Orcid(String::from("0000-0002-1694-233X")),
             Identifier::parse("https://orcid.org/0000-0002-1694-233X")
         );
 
         assert_eq!(
-            Identifier::Orcid {
-                value: String::from("0000-0001-5109-3700")
-            },
+            Identifier::Orcid(String::from("0000-0001-5109-3700")),
             Identifier::parse("https://orcid.org/0000-0001-5109-3700")
         );
     }
@@ -144,9 +138,7 @@ mod orcid_parser_tests {
 
     #[test]
     fn case() {
-        let expected = Identifier::Orcid {
-            value: String::from("0000-0002-1694-233X"),
-        };
+        let expected = Identifier::Orcid(String::from("0000-0002-1694-233X"));
 
         assert_eq!(
             expected,
@@ -163,9 +155,7 @@ mod orcid_parser_tests {
 
     #[test]
     fn scheme() {
-        let expected = Identifier::Orcid {
-            value: String::from("0000-0002-1694-233X"),
-        };
+        let expected = Identifier::Orcid(String::from("0000-0002-1694-233X"));
 
         assert_eq!(
             expected,
