@@ -13,6 +13,20 @@ pub(crate) fn try_parse(input: &IdentifierParseInput) -> Option<Identifier> {
         .map(|uri| Identifier::Uri(uri.to_string()))
 }
 
+/// Represent a URI Identifier type as a URI string.
+pub(crate) fn to_uri(input: &Identifier) -> Option<String> {
+    match input {
+        Identifier::Uri(value) => Some(value.clone()),
+        _ => None,
+    }
+}
+
+/// Encode a URI as a stable string in the recommended format.
+/// Will always return a String if an URI type is supplied.
+pub(crate) fn to_stable_string(input: &Identifier) -> Option<String> {
+    to_uri(input)
+}
+
 #[cfg(test)]
 mod parse_tests {
     use super::*;

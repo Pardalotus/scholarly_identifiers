@@ -37,7 +37,7 @@ lazy_static! {
 fn percent_encode_for_doi(input: &str) -> String {
     let mut result_buffer = String::new();
 
-    // For multi-byte sequences. Unicode has a maximum charcter size of 4 bytes.
+    // For multi-byte sequences. Unicode has a maximum character size of 4 bytes.
     let mut char_buffer = [0; 4];
 
     // Map to 4-byte UTF-8 chars.
@@ -156,6 +156,18 @@ pub fn to_uri(input: &Identifier) -> Option<String> {
             let encoded_suffix = percent_encode_for_doi(suffix);
             Some(format!("https://doi.org/{}/{}", prefix, encoded_suffix))
         }
+        _ => None,
+    }
+}
+
+/// Encode a DOI as a stable simple string.
+/// Will always return a String if a DOI type is supplied.
+pub(crate) fn to_stable_string(input: &Identifier) -> Option<String> {
+    match input {
+        Identifier::Doi {
+            ref prefix,
+            ref suffix,
+        } => Some(format!("{}/{}", prefix, suffix)),
         _ => None,
     }
 }
@@ -446,6 +458,7 @@ mod doi_parser_negative_tests {
 /// Tests for the end-to-end behaviour of the parser and then conversion back to URI.
 #[cfg(test)]
 mod doi_end_to_end_tests {
+
     use super::*;
 
     #[test]

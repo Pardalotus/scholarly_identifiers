@@ -106,9 +106,90 @@ impl Identifier {
             // If it had been parseable as a URI, it would have been parsed as the Identifier::Uri type.
             Identifier::String(_) => None,
 
-            // No natural URI for ISBN.
-            Identifier::Isbn(_) => None,
+            Identifier::Isbn(_) => isbn::to_uri(self),
             Identifier::Ror(_) => ror::to_uri(self),
+        }
+    }
+
+    /// Represent as a simple, stable string representation.
+    /// Depending on type, this is sometimes the URI representation, sometimes not.
+    /// This representation is meant to be stable and consistent, so that it can be used as a key in a database.
+    /// It should also be deterministically parsed back into the same value.
+    pub fn to_stable_string(&self) -> String {
+        // Some use of unwrap in cases where we know that the URI will always succeed when the enum variant is right.
+        let maybe_string = match self {
+            // Recommended format for a DOI is the URI.
+            Identifier::Doi {
+                prefix: _,
+                suffix: _,
+            } => doi::to_stable_string(self),
+
+            Identifier::Orcid(_) => orcid::to_stable_string(self),
+
+            Identifier::Uri(_) => uri::to_stable_string(self),
+
+            // Don't assume the String type can be converted to a URI.
+            // If it had been parseable as a URI, it would have been parsed as the Identifier::Uri type.
+            Identifier::String(value) => Some(value.clone()),
+
+            // No natural URI for ISBN.
+            Identifier::Isbn(_) => isbn::to_stable_string(self),
+            Identifier::Ror(_) => ror::to_stable_string(self),
+        };
+
+        // All of the above should handle representation.
+        // An Option at this point is a bug. Use the fall-back debug format.
+        if let Some(result) = maybe_string {
+            result
+        } else {
+            log::error!("Failed to convert to string: {:?}", self);
+
+            format!("{:?}", self)
+        }
+    }
+
+    /// Convert to a pair of simple stable string representation and a numeric type id.
+    /// The simple string is usually not the URI format.
+    /// These type IDs are defined to be stable, and should not be altered.
+    pub fn to_id_string_pair(&self) -> (String, u32) {
+        let maybe_result = match self {
+            Identifier::Doi {
+                prefix: _,
+                suffix: _,
+            } => (doi::to_stable_string(self), 1),
+            Identifier::Orcid(_) => (orcid::to_stable_string(self), 2),
+            Identifier::Ror(_) => (ror::to_stable_string(self), 3),
+            Identifier::Uri(_) => (uri::to_stable_string(self), 4),
+            Identifier::String(value) => (Some(value.clone()), 5),
+            Identifier::Isbn(_) => (isbn::to_stable_string(self), 6),
+        };
+
+        // All of the above should handle representations.
+        // A None at this point is a bug. Use the fall-back debug format.
+        match maybe_result {
+            (Some(value), type_id) => (value, type_id),
+            _ => {
+                log::error!("Failed to convert to string: {:?}", self);
+                (format!("{:?}", self), 5)
+            }
+        }
+    }
+
+    /// Construct from a (type id, string) pair.
+    pub fn from_id_string_pair(input_str: &str, type_id: u32) -> Option<Identifier> {
+        let parse_input = IdentifierParseInput::build(input_str);
+
+        match type_id {
+            1 => doi::try_parse(&parse_input),
+            2 => orcid::try_parse(&parse_input),
+            3 => ror::try_parse(&parse_input),
+            4 => uri::try_parse(&parse_input),
+            5 => Some(Identifier::String(String::from(input_str))),
+            6 => isbn::try_parse(&parse_input),
+            _ => {
+                log::error!("Unrecognised type id {}", type_id);
+                None
+            }
         }
     }
 }
@@ -165,5 +246,66 @@ impl IdentifierParseInput {
 
     pub(crate) fn host_lowercase(&self) -> Option<String> {
         self.host().map(|x| x.to_lowercase())
+    }
+}
+
+// End-to-end tests for each type.
+#[cfg(test)]
+mod doi_end_to_end_tests {
+    use super::*;
+
+    #[test]
+    fn stable() {
+        let inputs = vec![
+            // DOI
+            "doi.org/10.5555/12345678",
+            "https://doi.org/10.5555/12345678",
+            "10.5555/12345678",
+            "10.5555/1234e®🄮™5678",
+            // ISBN
+            "0306406152",
+            // ORCID
+            "https://orcid.org/0000-0002-1694-233X",
+            // ROR
+            "https://ror.org/02twcfp32",
+            // URI
+            "https://example.com",
+            // String
+            "hello",
+        ];
+
+        for input in inputs.iter() {
+            let parsed = Identifier::parse(input);
+
+            let as_string = parsed.to_stable_string();
+
+            // Not all types produce a URI.
+            let as_uri = parsed.to_uri();
+
+            let (id_value, id_type) = parsed.to_id_string_pair();
+
+            let as_string_parsed = Identifier::parse(&as_string);
+            assert_eq!(
+                as_string_parsed, parsed,
+                "Expected string type to round-trip identical"
+            );
+
+            // Those types that do parse to URIs should round-trip.
+            if let Some(uri) = as_uri {
+                let as_uri_parsed = Identifier::parse(&uri);
+
+                assert_eq!(
+                    as_uri_parsed, parsed,
+                    "Expected URI type to round-trip identical"
+                );
+            }
+
+            let as_pair_parsed = Identifier::from_id_string_pair(&id_value, id_type)
+                .expect("Expected as_pair to return a result");
+            assert_eq!(
+                as_pair_parsed, parsed,
+                "Expected pair to round-trip identical"
+            );
+        }
     }
 }

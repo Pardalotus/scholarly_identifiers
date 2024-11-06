@@ -73,11 +73,19 @@ fn expected_check_digit(identifier: &str) -> u64 {
     98 - ((parsed * 100) % 97)
 }
 
+/// Encode a ROR ID as a URI.
+/// Will always return a result when the input is a ROR type.
 pub(crate) fn to_uri(input: &Identifier) -> Option<String> {
     match input {
         Identifier::Ror(value) => Some(format!("https://ror.org/{}", value)),
         _ => None,
     }
+}
+
+/// Encode a ROR ID as a stable string in the recommended format.
+/// Will always return a String if a ROR type is supplied.
+pub(crate) fn to_stable_string(input: &Identifier) -> Option<String> {
+    to_uri(input)
 }
 
 #[cfg(test)]

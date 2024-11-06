@@ -20,7 +20,10 @@ const THIRTEEN_DIGIT_WEIGHTS: &[u32] = &[1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1];
 /// digits. This enables the resulting value to be compared against another
 /// ISBN, whether it was expressed in 10 or 13 digit form.
 pub(crate) fn try_parse(input: &IdentifierParseInput) -> Option<Identifier> {
-    if let Some(digits) = str_to_digits(&input.raw) {
+    let upcase = &input.raw.to_uppercase();
+    let less_prefix = upcase.strip_prefix("URN:ISBN:").unwrap_or(&input.raw);
+
+    if let Some(digits) = str_to_digits(&less_prefix) {
         if validate_10_digit(&digits) {
             let as_thirteen = ten_digit_to_thirteen_digit(&digits);
             Some(Identifier::Isbn(digits_to_str(&as_thirteen)))
@@ -31,6 +34,24 @@ pub(crate) fn try_parse(input: &IdentifierParseInput) -> Option<Identifier> {
         }
     } else {
         None
+    }
+}
+
+/// Convert an ISBN to a URN URI.
+/// Follows <https://www.iana.org/assignments/urn-formal/isbn>.
+pub fn to_uri(input: &Identifier) -> Option<String> {
+    match input {
+        Identifier::Isbn(ref value) => Some(format!("urn:isbn:{}", value)),
+        _ => None,
+    }
+}
+
+/// Encode an ISBN as a stable string.
+/// Will always return a String if an ISBN type is supplied.
+pub(crate) fn to_stable_string(input: &Identifier) -> Option<String> {
+    match input {
+        Identifier::Isbn(ref value) => Some(value.clone()),
+        _ => None,
     }
 }
 
