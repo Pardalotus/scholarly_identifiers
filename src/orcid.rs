@@ -88,11 +88,20 @@ fn validate_check_digit(orcid_id: &str) -> bool {
     }
 }
 
+/// Encode an ORCID ID as a URI
+/// Will always return a result if an ORCID type is supplied.
 pub fn to_uri(input: &Identifier) -> Option<String> {
     match input {
         Identifier::Orcid(value) => Some(format!("https://orcid.org/{}", value)),
         _ => None,
     }
+}
+
+/// Encode an ORCID ID as a stable string in the recommended format.
+/// https://support.orcid.org/hc/en-us/articles/360006897674-Structure-of-the-ORCID-Identifier
+/// Will always return a String if an ORCID type is supplied.
+pub(crate) fn to_stable_string(input: &Identifier) -> Option<String> {
+    to_uri(input)
 }
 
 #[cfg(test)]
